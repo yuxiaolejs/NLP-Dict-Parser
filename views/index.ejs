@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NLP Parser</title>
+</head>
+
+<body>
+    <h1 id="status">READY</h1>
+    <table border="1" oncontextmenu="return false;">
+        <thead>
+            <th>Group</th>
+            <th>QQ</th>
+            <th>Content</th>
+            <th>Operation</th>
+        </thead>
+        <tbody>
+            <%for(i=0;i<data.length;i++){%>
+                <tr id="msg_<%=data[i].id%>">
+                    <td>
+                        <%=data[i].group%>
+                    </td>
+                    <td>
+                        <%=data[i].qq%>
+                    </td>
+                    <td style="width: 300px; word-break: break-all;" class="MSG" data-id="<%=data[i].id%>">
+                        <%-data[i].content%>
+                    </td>
+                    <td>
+                        <button class="bt_a" data-id="<%=data[i].id%>">A</button>
+                        <button class="bt_b" data-id="<%=data[i].id%>">B</button>
+                        <button class="bt_d" data-id="<%=data[i].id%>">Del</button>
+                    </td>
+                </tr>
+                <%}%>
+        </tbody>
+    </table>
+    <script src="https://uni-versal.oss-accelerate.aliyuncs.com/js/jquery-1.9.1.js"></script>
+    <script>
+        var current_a = -1, current_b
+        $(".bt_a").click(e => {
+            current_a = e.target.dataset.id
+        })
+        $(".bt_b").click(e => {
+            if (current_a == -1) {
+                $("#status").html("A is not set")
+                return;
+            }
+            current_b = e.target.dataset.id
+            $.ajax({
+                url: "/update",
+                type: "POST",
+                data: {
+                    a: current_a,
+                    b: current_b
+                },
+                success: (e) => {
+                    $("#status").html(`Set ${current_a} as A, ${current_b} as B`)
+                    $("#msg_" + current_a).css("display", "none")
+                    $("#msg_" + current_b).css("display", "none")
+                    current_a = -1
+                }
+            })
+        })
+        $(".bt_d").click(e => {
+            console.log(e.target.dataset.id)
+        })
+        $(".MSG").mousedown(e => {
+            if (e.button == 0) {
+                $("#msg_" + current_a).css("background-color", "#FFF")
+                current_a = e.target.dataset.id
+                $("#msg_" + e.target.dataset.id).css("background-color", "#FCC")
+            } else if (e.button == 2) {
+                if (current_a == -1) {
+                    $("#status").html("A is not set")
+                    return;
+                }
+                if (e.target.dataset.id == current_a) {
+                    $("#status").html("Duplicated selection")
+                    return;
+                }
+                $("#msg_" + current_b).css("background-color", "#FFF")
+                current_b = e.target.dataset.id
+                $("#msg_" + e.target.dataset.id).css("background-color", "#CCF")
+
+            } else if (e.button == 1) {
+                $.ajax({
+                    url: "/delete",
+                    type: "POST",
+                    data: {
+                        id: e.target.dataset.id,
+                    },
+                    success: (ea) => {
+                        $("#status").html(`Deleted ${e.target.dataset.id}`)
+                        $("#msg_" + e.target.dataset.id).css("display", "none")
+                    }
+                })
+            }
+            return false
+        })
+        $("body").keydown(e => {
+            if (current_a == -1) {
+                $("#status").html("A is not set")
+                return;
+            }
+            if (current_b == -1) {
+                $("#status").html("B is not set")
+                return;
+            }
+            if (e.keyCode == 13) {
+                $.ajax({
+                    url: "/update",
+                    type: "POST",
+                    data: {
+                        a: current_a,
+                        b: current_b
+                    },
+                    success: (e) => {
+                        $("#status").html(`Set ${current_a} as A, ${current_b} as B`)
+                        $("#msg_" + current_a).css("display", "none")
+                        $("#msg_" + current_b).css("display", "none")
+                        $("#msg_" + current_a).css("background-color", "#FFF")
+                        $("#msg_" + current_b).css("background-color", "#FFF")
+                        current_a = -1
+                        current_b = -1
+                    }
+                })
+            }
+        })
+    </script>
+</body>
+
+</html>
